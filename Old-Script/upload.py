@@ -5,14 +5,14 @@ import ssl, smtplib
 import sys
 import json
 
-smtp_secret = "6O59tS3xb2kE4SVw"
-smtp_account = "elias@keller-re.de"
+smtp_secret = "xxxxxxx"
+smtp_account = "xxxxxxx"
 smtp_server = "mail.your-server.de"
-#  smtp_receiver = "eliaszobler@gmail.com"
+#  smtp_receiver = "xxxxxx"
 smtp_receiver = smtp_account
 
-client_id = "5Y4TlLLw5QsAVKsIvqxJr7rvT1WaAOG4"
-client_secret = "bfjDCUXQVrAOg0xG"
+client_id = "xxxxx"
+client_secret = "xxxxx"
 
 def print_json(j):
     print(json.dumps(j, indent=2))
