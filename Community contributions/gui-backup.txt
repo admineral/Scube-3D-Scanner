@@ -120,7 +120,6 @@ spinBox_anzahlEbene.setValue(1)
 
 
 
-
 # Add labels for the input fields
 input_label = QLabel("Photos Per Level:")
 input_label.setStyleSheet("color: white; font-size: 20px;")
