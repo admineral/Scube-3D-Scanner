@@ -1,0 +1,369 @@
+
+
+import datetime, os, time, threading
+import RPi.GPIO as GPIO
+from picamera import PiCamera
+import board, neopixel
+from PIL import Image
+
+print ("Scan Started")
+
+pixel_pin = board.D18
+num_pixels = 12
+ORDER = neopixel.RGB
+pixels = neopixel.NeoPixel(pixel_pin, num_pixels, brightness=0.2,auto_write=False,pixel_order=ORDER)
+
+class Motor:
+    GPIO.setmode(GPIO.BCM)
+
+    # Verwendete Pins am Rapberry Pi
+    A=26
+    B=19
+    C=13
+    D=6
+    step_time=0.001
+
+    # Pins aus Ausgänge definieren
+    GPIO.setup(A,GPIO.OUT)
+    GPIO.setup(B,GPIO.OUT)
+    GPIO.setup(C,GPIO.OUT)
+    GPIO.setup(D,GPIO.OUT)
+    GPIO.output(A, False)
+    GPIO.output(B, False)
+    GPIO.output(C, False)
+    GPIO.output(D, False)
+
+    # Schritte 1 - 8 festlegen
+    def Step1():
+        GPIO.output(Motor.D, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.D, False)
+    def Step2():
+        GPIO.output(Motor.D, True)
+        GPIO.output(Motor.C, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.D, False)
+        GPIO.output(Motor.C, False)
+    def Step3():
+        GPIO.output(Motor.C, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.C, False)
+    def Step4():
+        GPIO.output(Motor.B, True)
+        GPIO.output(Motor.C, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.B, False)
+        GPIO.output(Motor.C, False)
+    def Step5():
+        GPIO.output(Motor.B, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.B, False)
+    def Step6():
+        GPIO.output(Motor.A, True)
+        GPIO.output(Motor.B, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.A, False)
+        GPIO.output(Motor.B, False)
+    def Step7():
+        GPIO.output(Motor.A, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.A, False)
+    def Step8():
+        GPIO.output(Motor.D, True)
+        GPIO.output(Motor.A, True)
+        time.sleep(Motor.step_time)
+        GPIO.output(Motor.D, False)
+        GPIO.output(Motor.A, False)
+    def turn (degree):
+        full =( 2450)
+        for i in range (int(degree / 360 * full)):
+            Motor.Step1()
+            Motor.Step2()
+            Motor.Step3()
+            Motor.Step4()
+            Motor.Step5()
+            Motor.Step6()
+            Motor.Step7()
+            Motor.Step8()
+
+
+class MotorKamera:
+
+    step_time = 0.001
+
+    #Pins definieren für den 2. Motor
+
+    E=21
+    F=20
+    G=16
+    H=12
+
+
+    GPIO.setmode(GPIO.BCM)
+    # Pins aus Ausgänge definieren
+
+    GPIO.setup(E, GPIO.OUT)
+    GPIO.setup(F, GPIO.OUT)
+    GPIO.setup(G, GPIO.OUT)
+    GPIO.setup(H, GPIO.OUT)
+    GPIO.output(E, False)
+    GPIO.output(F, False)
+    GPIO.output(G, False)
+    GPIO.output(H, False)
+
+    # Schritte 1 - 8 festlegen Motor 2
+    def Step1D(self):
+        GPIO.output(MotorKamera.H, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.H, False)
+    def Step2D(self):
+        GPIO.output(MotorKamera.H, True)
+        GPIO.output(MotorKamera.G, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.H, False)
+        GPIO.output(MotorKamera.G, False)
+    def Step3D(self):
+        GPIO.output(MotorKamera.G, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.G, False)
+    def Step4D(self):
+        GPIO.output(MotorKamera.F, True)
+        GPIO.output(MotorKamera.G, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.F, False)
+        GPIO.output(MotorKamera.G, False)
+    def Step5D(self):
+        GPIO.output(MotorKamera.F, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.F, False)
+    def Step6D(self):
+        GPIO.output(MotorKamera.E, True)
+        GPIO.output(MotorKamera.F, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.E, False)
+        GPIO.output(MotorKamera.F, False)
+    def Step7D(self):
+        GPIO.output(MotorKamera.E, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.E, False)
+    def Step8D(self):
+        GPIO.output(MotorKamera.H, True)
+        GPIO.output(MotorKamera.E, True)
+        time.sleep(MotorKamera.step_time)
+        GPIO.output(MotorKamera.H, False)
+        GPIO.output(MotorKamera.E, False)
+
+    position = 0
+
+    def turnStartPosition(self):
+        for i in range(400):
+            self.Step8D()
+            self.Step7D()
+            self.Step6D()
+            self.Step5D()
+            self.Step4D()
+            self.Step3D()
+            self.Step2D()
+            self.Step1D()
+        self.position = 0
+
+    def turnPosition(self, anzahlEbene):
+        total_steps = 1100  # total number of steps for the camera to raise from start to end position
+        steps_per_level = total_steps // anzahlEbene  # calculate the number of steps per level
+        steps_to_raise = steps_per_level
+
+        for i in range(steps_to_raise):
+            self.Step8D()
+            self.Step7D()
+            self.Step6D()
+            self.Step5D()
+            self.Step4D()
+            self.Step3D()
+            self.Step2D()
+            self.Step1D()
+
+        self.position += 1
+
+
+    def turnHome(self):
+        steps_to_home = 1500
+        for i in range(steps_to_home):
+            self.Step1D()
+            self.Step2D()
+            self.Step3D()
+            self.Step4D()
+            self.Step5D()
+            self.Step6D()
+            self.Step7D()
+            self.Step8D()
+        self.position = 0
+
+#-----------------------------------------------
+
+
+
+class Light:
+    pixels = neopixel.NeoPixel(board.D18, 12)
+
+    def on(brightness=60):
+        Light.pixels.fill((brightness, brightness, brightness))
+
+    def off():
+        Light.pixels.fill((0, 0, 0))
+
+    def green(brightness=100):
+        Light.pixels.fill((0, brightness, 0))
+
+    def done(brightness=100):
+        Light.pixels.fill((0, brightness, 0))
+
+    #################################################################
+def wheel(pos):
+    # Input a value 0 to 255 to get a color value.
+    # The colours are a transition r - g - b - back to r.
+    if pos < 0 or pos > 255:
+        r = g = b = 0
+    elif pos < 85:
+        r = int(pos * 3)
+        g = int(255 - pos * 3)
+        b = 0
+    elif pos < 170:
+        pos -= 85
+        r = int(255 - pos * 3)
+        g = 0
+        b = int(pos * 3)
+    else:
+        pos -= 170
+        r = 0
+        g = int(pos * 3)
+        b = int(255 - pos * 3)
+    return (r, g, b) if ORDER in (neopixel.RGB, neopixel.GRB) else (r, g, b, 0)
+
+def rainbow_cycle(wait):
+    for j in range(255):
+        for i in range(num_pixels):
+            pixel_index = (i * 256 // num_pixels) + j
+            pixels[i] = wheel(pixel_index & 255)
+        pixels.show()
+        time.sleep(wait)
+#################################################
+#################################################
+import time
+import datetime
+import os
+import threading
+
+from picamera import PiCamera
+
+class Cam:
+    cam = PiCamera(resolution=(3280, 2464))
+
+    cam.rotation = 0
+    counter = 0
+
+    def __init__(self, anzahlEbene, anzahlfotos):
+        self.anzahlEbene = anzahlEbene
+        self.anzahlfotos = anzahlfotos
+        Cam.cam.annotate_text_size = 140
+
+    def take(self, filename):
+        Cam.counter += 1
+        Cam.cam.capture(filename.format(Cam.counter))
+        Cam.cam.start_preview(fullscreen=False, window=(0, -60, 600, 600))
+        Cam.cam.annotate_text = f"Level: {int((Cam.counter-1)/self.anzahlfotos)+1}/{self.anzahlEbene}  Total: {Cam.counter}/{self.anzahlEbene * self.anzahlfotos}  {int(Cam.counter/(self.anzahlEbene * self.anzahlfotos)*100)}%  Remaining : {self.estimate_time_remaining()}"
+        Cam.cam.preview_alpha = 250
+        
+        
+        # Turn off preview and annotation while taking the picture
+        Cam.cam.annotate_text = ''
+        Cam.cam.stop_preview()
+        Cam.cam.capture(filename.format(Cam.counter))
+
+        # Turn preview and annotation back on after taking the picture
+        Cam.cam.start_preview(fullscreen=False, window=(0, -60, 600, 600))
+        Cam.cam.annotate_text = f"Level: {int((Cam.counter-1)/self.anzahlfotos)+1}/{self.anzahlEbene}  Total: {Cam.counter}/{self.anzahlEbene * self.anzahlfotos}  {int(Cam.counter/(self.anzahlEbene * self.anzahlfotos)*100)}%  Remaining : {self.estimate_time_remaining()}"
+        
+
+    def estimate_time_remaining(self):
+        if Cam.counter == 0:
+            return 0
+
+        elapsed_time = time.perf_counter() - start_time
+        time_per_image = elapsed_time / Cam.counter
+        remaining_images = (self.anzahlEbene * self.anzahlfotos) - Cam.counter
+        remaining_time = remaining_images * time_per_image
+        return str(datetime.timedelta(seconds=int(remaining_time)))
+
+import threading
+
+class Scanner:
+    def __init__(self):
+        self.stop_scanning = threading.Event()
+        self.scanner_thread = None
+
+    def start(self):
+        self.scanner_thread = threading.Thread(target=self.run, daemon=True)
+        self.scanner_thread.start()
+
+    def stop(self):
+        self.scanner_thread = threading.Thread(target=self.run, daemon=False)
+        self.scanner_thread.stop()
+
+    def run(self):
+        while not self.stop_scanning.is_set():
+            # do some scanning
+            pass
+        # cleanup code
+        pass
+
+
+ 
+def run(anzahlfotos=30, anzahlEbene=30):
+    global start_time
+    start_time = time.perf_counter()
+    Zaehler = 0
+    now = datetime.datetime.now().isoformat()
+    folder = f"/home/pi/scube_output/{now}"
+    os.makedirs(folder)
+    print("Get a Rainbow up YA ...")
+
+    
+
+    motor_kamera = MotorKamera()
+    motor_kamera.turnStartPosition()  
+
+    rainbow_cycle(0.01)  
+    rainbow_cycle(0.001)
+    time.sleep(1)
+    Light.off()
+    time.sleep(1)
+    Light.on()
+    time.sleep(0.5)
+
+    umdrehungen = 1
+
+    cam = Cam(anzahlEbene, anzahlfotos)
+
+    for i in range(0, anzahlEbene):
+        for j in range(0, anzahlfotos):
+            filename = f"{folder}/{Zaehler+j+1}.jpg"
+            print(f"Level: {i+1}/{anzahlEbene}    Total: {Cam.counter}/{anzahlEbene * anzahlfotos}    {int(Cam.counter/(anzahlEbene * anzahlfotos)*100)}%    Time Remaining: {cam.estimate_time_remaining()}")
+            cam.take(filename)
+            time.sleep(0.5)
+            Motor.turn(umdrehungen*360/anzahlfotos)
+
+        motor_kamera.turnPosition(anzahlEbene)  
+        time.sleep(1)
+
+        Zaehler += anzahlfotos
+        
+    Light.done()    
+
+    motor_kamera.turnHome()
+    time.sleep(0.5)
+    Light.off()
+    GPIO.cleanup()
+    Cam.cam.stop_preview() 
+    return(folder)
+
+

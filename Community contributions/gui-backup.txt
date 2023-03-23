@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QRect
+from PyQt5.QtWidgets import QSlider
+
+
+import scanner
+import home
+import threading
+import datetime, os
+import time
+import RPi.GPIO as GPIO
+import board
+import neopixel
+
+import os
+
+
+app = QApplication([])
+window = QWidget()
+window.setStyleSheet("background-color: black;")
+
+# create a global variable for the scanner object
+scanner_obj = scanner.Scanner()
+
+# initialize neopixels
+pixels = neopixel.NeoPixel(board.D18, 12)
+
+def update_led_brightness(value):
+    scanner.Light.on(brightness=int(value))
+
+
+class CustomSpinBox(QSpinBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setStyleSheet("""
+            QSpinBox { background-color: grey; font-size: 38px; }
+            QSpinBox::up-button { width: 50px; }
+            QSpinBox::down-button { width: 50px; }
+            QSpinBox::up-arrow { width: 25px; height: 25px; }
+            QSpinBox::down-arrow { width: 25px; height: 25px; }
+        """)
+
+
+def paintEvent(self, event):
+    painter = QStylePainter(self)
+    opt = QStyleOptionSpinBox()
+    self.initStyleOption(opt)
+
+    painter.drawComplexControl(QStyle.CC_SpinBox, opt)
+
+    arrow_rect = QRect(opt.rect)
+    arrow_rect.setLeft(opt.rect.width() * 3 // 4)
+    arrow_rect.setWidth(arrow_rect.height())  # Make the arrow square
+    arrow_rect.adjust(8, 4, -8, -4)  # Add some padding around the arrow
+
+    up_arrow = self.style().standardIcon(QStyle.SP_ArrowUp)
+    down_arrow = self.style().standardIcon(QStyle.SP_ArrowDown)
+
+    painter.drawPixmap(arrow_rect.topLeft(), up_arrow.pixmap(arrow_rect.size(), QIcon.Normal, QIcon.On))
+    painter.drawPixmap(arrow_rect.bottomLeft(), down_arrow.pixmap(arrow_rect.size(), QIcon.Normal, QIcon.On))
+
+
+
+def start_button():
+    global scanner_thread
+    anzahlfotos = spinBox_anzahlfotos.value()
+    anzahlEbene = spinBox_anzahlEbene.value()
+    scanner_thread = threading.Thread(target=scanner.run, args=(anzahlfotos, anzahlEbene))
+    scanner_thread.start()
+    btn_run.setDisabled(True)  # Disable the button
+    btn_run.hide()  # Hide the button
+
+
+def home_button():
+    home.turnHome()
+
+
+def quit_button():
+    # turn off neopixels
+    pixels.fill((0, 0, 0))
+    GPIO.cleanup()
+    app.quit()
+
+
+led_brightness_slider = QSlider(Qt.Horizontal)
+led_brightness_slider.setMinimum(0)
+led_brightness_slider.setMaximum(255)
+led_brightness_slider.setValue(128)  # Initial value
+led_brightness_slider.valueChanged.connect(update_led_brightness)
+led_brightness_slider.setStyleSheet("""
+    QSlider::groove:horizontal {
+        border: 1px solid #999999;
+        height: 8px;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #B1B1B1, stop:1 #B1B1B1);
+    }
+    QSlider::handle:horizontal {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #5DCCFF, stop:1 #5DCCFF);
+        border: 1px solid #5c5c5c;
+        width: 18px;
+        margin-top: -6px;
+        margin-bottom: -6px;
+        border-radius: 3px;
+    }
+""")
+
+spinBox_anzahlfotos = CustomSpinBox()
+spinBox_anzahlfotos.setRange(0, 100)
+spinBox_anzahlfotos.setSingleStep(5)  # Set increment
+spinBox_anzahlfotos.setValue(10)
+
+
+spinBox_anzahlEbene = CustomSpinBox()
+spinBox_anzahlEbene.setRange(5, 100)
+spinBox_anzahlEbene.setSingleStep(5)  # Set increment
+spinBox_anzahlEbene.setValue(1)
+
+
+
+
+
+# Add labels for the input fields
+input_label = QLabel("Photos Per Level:")
+input_label.setStyleSheet("color: white; font-size: 20px;")
+
+input_label2 = QLabel("Levels:")
+input_label2.setStyleSheet("color: white; font-size: 20px;")
+
+btn_quit = QPushButton('QUIT')
+btn_quit.clicked.connect(quit_button)
+btn_quit.setStyleSheet("background-color: Red; color: black; font-size: 30px; border: 2px solid black; width: 80px; height: 80px; border-radius: 35%;")
+
+btn_run = QPushButton('START')
+btn_run.clicked.connect(start_button)
+btn_run.setStyleSheet("background-color: Green; color: black; font-size: 30px; border: 2px solid black; width: 80px; height: 80px; border-radius: 35%;")
+
+btn_home = QPushButton('HOME', window)
+btn_home.clicked.connect(home_button)
+btn_home.setStyleSheet("background-color: blue; color: black; font-size: 30px; border: 2px solid black; width: 80px; height: 80px; border-radius: 35%;")
+
+# ...
+
+# create a vertical layout for the buttons and input fields
+button_layout = QVBoxLayout()
+button_layout.setContentsMargins(10, 0, 0, 0)  # Remove extra margins
+button_layout.setSpacing(1)  # Add some spacing between elements
+
+# Add input fields and labels to the button layout
+led_brightness_label = QLabel("LED Brightness:")
+led_brightness_label.setStyleSheet("color: white; font-size: 20px;")
+button_layout.addWidget(led_brightness_label)
+button_layout.addWidget(led_brightness_slider)
+
+button_layout.addWidget(input_label)
+button_layout.addWidget(spinBox_anzahlfotos)
+button_layout.addWidget(input_label2)
+button_layout.addWidget(spinBox_anzahlEbene)
+led_brightness_label = QLabel("LED Brightness:")
+led_brightness_label.setStyleSheet("color: white; font-size: 20px;")
+
+
+
+# Add buttons to the button layout
+button_layout.addWidget(btn_run)
+button_layout.addWidget(btn_quit)
+button_layout.addWidget(btn_home)
+
+# create a QWidget to contain the QVBoxLayout
+button_container = QWidget()
+button_container.setLayout(button_layout)
+button_container.setMaximumWidth(180)  # Set the maximum width of the button container to 4 cm (approximately 150 pixels)
+
+# create a horizontal layout for the button container and a spacer to take up the rest of the width
+layout = QHBoxLayout()
+layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))  # Move the spacer to the left
+layout.addWidget(button_container)
+
+# set the layout of the main window
+window.setLayout(layout)
+window.setGeometry(0, 0, 800, 480)  # set the window size to match the 7-inch Pi touchscreen
+window.showFullScreen()
+
+# set the alignment of the button layout to the right-hand side of the screen
+button_layout.setAlignment(Qt.AlignRight)
+
+app.exec_()
