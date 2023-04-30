@@ -8,3 +8,6 @@ This repository contains all the files and instructions you need to create a 3D-
 https://www.thingiverse.com/thing:4646226
 
 [![Video-Name](images/video-thumbnail.png)](https://www.youtube.com/watch?v=8BPKmn4WdW0)
+[![Video-Name](images/video-thumbnail1.png)](https://www.youtube.com/watch?v=8BPKmn4WdW0)
+[![Video-Name](images/video-thumbnai2.png)](https://www.youtube.com/watch?v=8BPKmn4WdW0)
+[![Video-Name](images/video-thumbnai3.png)](https://www.youtube.com/watch?v=8BPKmn4WdW0)
